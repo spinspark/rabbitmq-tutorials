@@ -1,4 +1,4 @@
-use futures_lite::StreamExt;
+use futures_util::StreamExt;
 use lapin::{
     options::{BasicConsumeOptions, ExchangeDeclareOptions, QueueBindOptions, QueueDeclareOptions},
     types::FieldTable,
@@ -7,13 +7,13 @@ use lapin::{
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "amqp://localhost";
+    let addr = "amqp://127.0.0.1:5672";
     let connection = Connection::connect(addr, ConnectionProperties::default()).await?;
     let channel = connection.create_channel().await?;
 
     channel
         .exchange_declare(
-            "logs",
+            "logs".into(),
             ExchangeKind::Fanout,
             ExchangeDeclareOptions::default(),
             FieldTable::default(),
@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let queue = channel
         .queue_declare(
-            "",
+            "".into(),
             QueueDeclareOptions {
                 exclusive: true,
                 ..Default::default()
@@ -33,9 +33,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     channel
         .queue_bind(
-            queue.name().as_str(),
-            "logs",
-            "",
+            queue.name().clone(),
+            "logs".into(),
+            "".into(),
             QueueBindOptions::default(),
             FieldTable::default(),
         )
@@ -43,8 +43,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut consumer = channel
         .basic_consume(
-            queue.name().as_str(),
-            "consumer",
+            queue.name().clone(),
+            "consumer".into(),
             BasicConsumeOptions {
                 no_ack: true,
                 ..Default::default()

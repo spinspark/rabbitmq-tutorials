@@ -1,4 +1,4 @@
-use futures_lite::StreamExt;
+use futures_util::StreamExt;
 use lapin::{
     options::{BasicConsumeOptions, ExchangeDeclareOptions, QueueBindOptions, QueueDeclareOptions},
     types::FieldTable,
@@ -18,13 +18,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(1);
     }
 
-    let addr = "amqp://localhost";
+    let addr = "amqp://127.0.0.1:5672";
     let connection = Connection::connect(addr, ConnectionProperties::default()).await?;
     let channel = connection.create_channel().await?;
 
     channel
         .exchange_declare(
-            "direct_logs",
+            "direct_logs".into(),
             ExchangeKind::Direct,
             ExchangeDeclareOptions::default(),
             FieldTable::default(),
@@ -33,7 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let queue = channel
         .queue_declare(
-            "",
+            "".into(),
             QueueDeclareOptions {
                 exclusive: true,
                 ..Default::default()
@@ -42,22 +42,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .await?;
 
-    for severity in &severities {
-        channel
-            .queue_bind(
-                queue.name().as_str(),
-                "direct_logs",
-                severity,
-                QueueBindOptions::default(),
-                FieldTable::default(),
-            )
-            .await?;
-    }
+    futures_util::future::join_all(severities.iter().map(|severity| {
+        channel.queue_bind(
+            queue.name().clone(),
+            "direct_logs".into(),
+            severity.clone().into(),
+            QueueBindOptions::default(),
+            FieldTable::default(),
+        )
+    }))
+    .await;
 
     let mut consumer = channel
         .basic_consume(
-            queue.name().as_str(),
-            "consumer",
+            queue.name().clone(),
+            "consumer".into(),
             BasicConsumeOptions {
                 no_ack: false,
                 ..Default::default()

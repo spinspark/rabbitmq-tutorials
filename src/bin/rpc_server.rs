@@ -1,10 +1,10 @@
-use futures_lite::StreamExt;
+use futures_util::StreamExt;
 use lapin::{
     options::{
         BasicAckOptions, BasicConsumeOptions, BasicPublishOptions, BasicQosOptions,
         QueueDeclareOptions,
     },
-    types::FieldTable,
+    types::{AMQPValue, FieldTable},
     BasicProperties, Connection, ConnectionProperties,
 };
 use std::fmt::{Display, Formatter};
@@ -38,15 +38,23 @@ fn fib(n: u64) -> u64 {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "amqp://localhost";
+    let addr = "amqp://127.0.0.1:5672";
     let connection = Connection::connect(addr, ConnectionProperties::default()).await?;
     let channel = connection.create_channel().await?;
 
+    let mut args = FieldTable::default();
+    args.insert(
+        "x-queue-type".into(),
+        AMQPValue::LongString("quorum".into()),
+    );
     channel
         .queue_declare(
-            "rpc_queue",
-            QueueDeclareOptions::default(),
-            FieldTable::default(),
+            "rpc_queue".into(),
+            QueueDeclareOptions {
+                durable: true,
+                ..Default::default()
+            },
+            args,
         )
         .await?;
 
@@ -54,8 +62,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut consumer = channel
         .basic_consume(
-            "rpc_queue",
-            "rpc_server",
+            "rpc_queue".into(),
+            "rpc_server".into(),
             BasicConsumeOptions::default(),
             FieldTable::default(),
         )
@@ -80,9 +88,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let routing_key = delivery
                 .properties
                 .reply_to()
-                .as_ref()
-                .ok_or(Error::MissingReplyTo)?
-                .as_str();
+                .clone()
+                .ok_or(Error::MissingReplyTo)?;
 
             let correlation_id = delivery
                 .properties
@@ -92,7 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             channel
                 .basic_publish(
-                    "",
+                    "".into(),
                     routing_key,
                     BasicPublishOptions::default(),
                     &payload,

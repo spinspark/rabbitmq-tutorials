@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-futures-lite = "2.5"
-lapin = "2.5"
+futures-util = "0.3"
+lapin = "4.7"
 tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread"] }
-uuid = { version = "1.11", features = ["v4"] }
+uuid = { version = "1.23", features = ["v4"] }

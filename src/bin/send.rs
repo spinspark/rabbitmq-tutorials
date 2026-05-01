@@ -1,20 +1,28 @@
 use lapin::{
     options::{BasicPublishOptions, QueueDeclareOptions},
-    types::FieldTable,
+    types::{AMQPValue, FieldTable},
     BasicProperties, Connection, ConnectionProperties,
 };
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "amqp://localhost";
+    let addr = "amqp://127.0.0.1:5672";
     let connection = Connection::connect(addr, ConnectionProperties::default()).await?;
     let channel = connection.create_channel().await?;
 
+    let mut args = FieldTable::default();
+    args.insert(
+        "x-queue-type".into(),
+        AMQPValue::LongString("quorum".into()),
+    );
     channel
         .queue_declare(
-            "test",
-            QueueDeclareOptions::default(),
-            FieldTable::default(),
+            "hello".into(),
+            QueueDeclareOptions {
+                durable: true,
+                ..Default::default()
+            },
+            args,
         )
         .await?;
 
@@ -22,8 +30,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     channel
         .basic_publish(
-            "",
-            "test",
+            "".into(),
+            "hello".into(),
             BasicPublishOptions::default(),
             payload,
             BasicProperties::default(),
@@ -32,7 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("[x] Sent message");
 
-    connection.close(0, "").await?;
+    connection.close(0, "".into()).await?;
 
     Ok(())
 }

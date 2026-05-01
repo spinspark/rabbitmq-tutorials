@@ -1,28 +1,36 @@
-use futures_lite::stream::StreamExt;
+use futures_util::stream::StreamExt;
 use lapin::{
     options::{BasicAckOptions, BasicConsumeOptions, QueueDeclareOptions},
-    types::FieldTable,
+    types::{AMQPValue, FieldTable},
     Connection, ConnectionProperties,
 };
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "amqp://localhost";
+    let addr = "amqp://127.0.0.1:5672";
     let connection = Connection::connect(addr, ConnectionProperties::default()).await?;
     let channel = connection.create_channel().await?;
 
+    let mut args = FieldTable::default();
+    args.insert(
+        "x-queue-type".into(),
+        AMQPValue::LongString("quorum".into()),
+    );
     channel
         .queue_declare(
-            "test",
-            QueueDeclareOptions::default(),
-            FieldTable::default(),
+            "hello".into(),
+            QueueDeclareOptions {
+                durable: true,
+                ..Default::default()
+            },
+            args,
         )
         .await?;
 
     let mut consumer = channel
         .basic_consume(
-            "test",
-            "consumer",
+            "hello".into(),
+            "consumer".into(),
             BasicConsumeOptions::default(),
             FieldTable::default(),
         )

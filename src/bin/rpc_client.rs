@@ -1,4 +1,4 @@
-use futures_lite::StreamExt;
+use futures_util::StreamExt;
 use lapin::{
     options::{BasicConsumeOptions, BasicPublishOptions, QueueDeclareOptions},
     types::{FieldTable, ShortString},
@@ -34,12 +34,13 @@ struct FibonacciRpcClient {
 
 impl FibonacciRpcClient {
     async fn new() -> Result<Self, lapin::Error> {
-        let addr = "amqp://localhost";
+        let addr = "amqp://127.0.0.1:5672";
         let connection = Connection::connect(addr, ConnectionProperties::default()).await?;
         let channel = connection.create_channel().await?;
+
         let callback_queue = channel
             .queue_declare(
-                "",
+                "".into(),
                 QueueDeclareOptions {
                     exclusive: true,
                     ..Default::default()
@@ -50,8 +51,8 @@ impl FibonacciRpcClient {
 
         let consumer = channel
             .basic_consume(
-                callback_queue.name().as_str(),
-                "rpc_client",
+                callback_queue.name().clone(),
+                "rpc_client".into(),
                 BasicConsumeOptions {
                     no_ack: true,
                     ..Default::default()
@@ -74,8 +75,8 @@ impl FibonacciRpcClient {
     async fn call(&mut self, n: u64) -> Result<u64, Box<dyn std::error::Error>> {
         self.channel
             .basic_publish(
-                "",
-                "rpc_queue",
+                "".into(),
+                "rpc_queue".into(),
                 BasicPublishOptions::default(),
                 n.to_le_bytes().as_ref(),
                 BasicProperties::default()
@@ -102,7 +103,7 @@ impl FibonacciRpcClient {
     }
 
     async fn close(&self) -> Result<(), lapin::Error> {
-        self.connection.close(0, "").await
+        self.connection.close(0, "".into()).await
     }
 }
 

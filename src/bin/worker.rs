@@ -1,32 +1,37 @@
-use futures_lite::StreamExt;
-use lapin::options::BasicQosOptions;
+use futures_util::StreamExt;
 use lapin::{
     options::{BasicAckOptions, BasicConsumeOptions, QueueDeclareOptions},
-    types::FieldTable,
+    types::{AMQPValue, FieldTable},
     Connection, ConnectionProperties,
 };
-use std::{thread, time::Duration};
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "amqp://localhost";
+    let addr = "amqp://127.0.0.1:5672";
     let connection = Connection::connect(addr, ConnectionProperties::default()).await?;
     let channel = connection.create_channel().await?;
 
+    let mut args = FieldTable::default();
+    args.insert(
+        "x-queue-type".into(),
+        AMQPValue::LongString("quorum".into()),
+    );
     channel
         .queue_declare(
-            "task_queue",
-            QueueDeclareOptions::default(),
-            FieldTable::default(),
+            "task_queue".into(),
+            QueueDeclareOptions {
+                durable: true,
+                ..Default::default()
+            },
+            args,
         )
         .await?;
 
-    channel.basic_qos(1, BasicQosOptions::default()).await?;
-
     let mut consumer = channel
         .basic_consume(
-            "task_queue",
-            "consumer",
+            "task_queue".into(),
+            "consumer".into(),
             BasicConsumeOptions::default(),
             FieldTable::default(),
         )
@@ -37,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     while let Some(delivery) = consumer.next().await {
         if let Ok(delivery) = delivery {
             println!("[x] Received {:?}", std::str::from_utf8(&delivery.data)?);
-            thread::sleep(Duration::from_secs(delivery.data.len() as u64));
+            tokio::time::sleep(Duration::from_secs(delivery.data.len() as u64)).await;
             println!("[x] Done");
             delivery.ack(BasicAckOptions::default()).await?;
         }

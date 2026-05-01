@@ -1,3 +1,4 @@
+use lapin::types::AMQPValue;
 use lapin::{
     options::{BasicPublishOptions, QueueDeclareOptions},
     types::FieldTable,
@@ -9,34 +10,42 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<_> = std::env::args().skip(1).collect();
     let message = match args.len() {
         0 => "hello".to_string(),
-        _ => args.join(" ").to_string(),
+        _ => args.join(" "),
     };
 
-    let addr = "amqp://localhost";
+    let addr = "amqp://127.0.0.1:5672";
     let connection = Connection::connect(addr, ConnectionProperties::default()).await?;
     let channel = connection.create_channel().await?;
 
+    let mut args = FieldTable::default();
+    args.insert(
+        "x-queue-type".into(),
+        AMQPValue::LongString("quorum".into()),
+    );
     channel
         .queue_declare(
-            "task_queue",
-            QueueDeclareOptions::default(),
-            FieldTable::default(),
+            "task_queue".into(),
+            QueueDeclareOptions {
+                durable: true,
+                ..Default::default()
+            },
+            args,
         )
         .await?;
 
     channel
         .basic_publish(
-            "",
-            "task_queue",
+            "".into(),
+            "task_queue".into(),
             BasicPublishOptions::default(),
             message.as_bytes(),
             BasicProperties::default(),
         )
         .await?;
 
-    println!("[x] Sent {message:?}");
+    println!("[x] Sent {:?}", std::str::from_utf8(message.as_bytes())?);
 
-    connection.close(0, "").await?;
+    connection.close(0, "".into()).await?;
 
     Ok(())
 }

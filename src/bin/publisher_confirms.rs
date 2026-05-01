@@ -19,7 +19,7 @@ async fn publish_messages_individually() -> Result<(), Box<dyn std::error::Error
     let queue = Uuid::new_v4().to_string();
     channel
         .queue_declare(
-            &queue,
+            queue.clone().into(),
             QueueDeclareOptions {
                 auto_delete: true,
                 ..Default::default()
@@ -35,8 +35,8 @@ async fn publish_messages_individually() -> Result<(), Box<dyn std::error::Error
     for i in 0..50000_i32 {
         channel
             .basic_publish(
-                "",
-                &queue,
+                "".into(),
+                queue.clone().into(),
                 BasicPublishOptions::default(),
                 &i.to_be_bytes(),
                 BasicProperties::default(),
@@ -51,7 +51,7 @@ async fn publish_messages_individually() -> Result<(), Box<dyn std::error::Error
         start.elapsed().as_millis()
     );
 
-    connection.close(0, "").await?;
+    connection.close(0, "".into()).await?;
     Ok(())
 }
 
@@ -63,7 +63,7 @@ async fn publish_messages_in_batch() -> Result<(), Box<dyn std::error::Error>> {
     let queue = Uuid::new_v4().to_string();
     channel
         .queue_declare(
-            &queue,
+            queue.clone().into(),
             QueueDeclareOptions {
                 auto_delete: true,
                 ..Default::default()
@@ -82,8 +82,8 @@ async fn publish_messages_in_batch() -> Result<(), Box<dyn std::error::Error>> {
     for i in 0..50000_i32 {
         channel
             .basic_publish(
-                "",
-                &queue,
+                "".into(),
+                queue.clone().into(),
                 BasicPublishOptions::default(),
                 &i.to_be_bytes(),
                 BasicProperties::default(),
@@ -107,6 +107,6 @@ async fn publish_messages_in_batch() -> Result<(), Box<dyn std::error::Error>> {
         start.elapsed().as_millis()
     );
 
-    connection.close(0, "").await?;
+    connection.close(0, "".into()).await?;
     Ok(())
 }
