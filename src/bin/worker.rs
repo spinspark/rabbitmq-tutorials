@@ -1,8 +1,8 @@
 use futures_util::StreamExt;
 use lapin::{
+    Connection, ConnectionProperties,
     options::{BasicAckOptions, BasicConsumeOptions, QueueDeclareOptions},
     types::{AMQPValue, FieldTable},
-    Connection, ConnectionProperties,
 };
 use std::time::Duration;
 

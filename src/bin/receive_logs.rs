@@ -1,8 +1,8 @@
 use futures_util::StreamExt;
 use lapin::{
+    Connection, ConnectionProperties, ExchangeKind,
     options::{BasicConsumeOptions, ExchangeDeclareOptions, QueueBindOptions, QueueDeclareOptions},
     types::FieldTable,
-    Connection, ConnectionProperties, ExchangeKind,
 };
 
 #[tokio::main]

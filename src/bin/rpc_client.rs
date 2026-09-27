@@ -1,8 +1,8 @@
 use futures_util::StreamExt;
 use lapin::{
+    BasicProperties, Channel, Connection, ConnectionProperties, Consumer, Queue,
     options::{BasicConsumeOptions, BasicPublishOptions, QueueDeclareOptions},
     types::{FieldTable, ShortString},
-    BasicProperties, Channel, Connection, ConnectionProperties, Consumer, Queue,
 };
 use std::fmt::{Display, Formatter};
 use uuid::Uuid;
@@ -87,16 +87,16 @@ impl FibonacciRpcClient {
             .await?;
 
         while let Some(delivery) = self.consumer.next().await {
-            if let Ok(delivery) = delivery {
-                if delivery.properties.correlation_id().as_ref() == Some(&self.correlation_id) {
-                    return Ok(u64::from_le_bytes(
-                        delivery
-                            .data
-                            .as_slice()
-                            .try_into()
-                            .map_err(|_| Error::CannotDecodeReply)?,
-                    ));
-                }
+            if let Ok(delivery) = delivery
+                && delivery.properties.correlation_id().as_ref() == Some(&self.correlation_id)
+            {
+                return Ok(u64::from_le_bytes(
+                    delivery
+                        .data
+                        .as_slice()
+                        .try_into()
+                        .map_err(|_| Error::CannotDecodeReply)?,
+                ));
             }
         }
         Err(Box::new(Error::NoReply))

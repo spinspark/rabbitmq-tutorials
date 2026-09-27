@@ -1,7 +1,7 @@
 use lapin::{
+    BasicProperties, Connection, ConnectionProperties, ExchangeKind,
     options::{BasicPublishOptions, ExchangeDeclareOptions},
     types::FieldTable,
-    BasicProperties, Connection, ConnectionProperties, ExchangeKind,
 };
 
 #[tokio::main]

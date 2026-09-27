@@ -1,16 +1,13 @@
 use lapin::{
+    BasicProperties, Connection, ConnectionProperties, ExchangeKind,
     options::{BasicPublishOptions, ExchangeDeclareOptions},
     types::FieldTable,
-    BasicProperties, Connection, ConnectionProperties, ExchangeKind,
 };
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<_> = std::env::args().skip(1).collect();
-    let routing_key = args
-        .first()
-        .clone()
-        .map_or("anonymous.info", String::as_str);
+    let routing_key = args.first().map_or("anonymous.info", String::as_str);
     let message = match args.len() {
         x if x < 2 => "Hello, world!".to_string(),
         _ => args[1..].join(" "),

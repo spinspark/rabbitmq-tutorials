@@ -1,8 +1,8 @@
 use lapin::types::AMQPValue;
 use lapin::{
+    BasicProperties, Connection, ConnectionProperties,
     options::{BasicPublishOptions, QueueDeclareOptions},
     types::FieldTable,
-    BasicProperties, Connection, ConnectionProperties,
 };
 
 #[tokio::main]

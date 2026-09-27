@@ -1,8 +1,8 @@
 use futures_util::stream::StreamExt;
 use lapin::{
+    Connection, ConnectionProperties,
     options::{BasicAckOptions, BasicConsumeOptions, QueueDeclareOptions},
     types::{AMQPValue, FieldTable},
-    Connection, ConnectionProperties,
 };
 
 #[tokio::main]

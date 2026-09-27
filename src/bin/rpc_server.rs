@@ -1,11 +1,11 @@
 use futures_util::StreamExt;
 use lapin::{
+    BasicProperties, Connection, ConnectionProperties,
     options::{
         BasicAckOptions, BasicConsumeOptions, BasicPublishOptions, BasicQosOptions,
         QueueDeclareOptions,
     },
     types::{AMQPValue, FieldTable},
-    BasicProperties, Connection, ConnectionProperties,
 };
 use std::fmt::{Display, Formatter};
 
@@ -29,11 +29,7 @@ impl Display for Error {
 }
 
 fn fib(n: u64) -> u64 {
-    if n < 2 {
-        n
-    } else {
-        fib(n - 1) + fib(n - 2)
-    }
+    if n < 2 { n } else { fib(n - 1) + fib(n - 2) }
 }
 
 #[tokio::main]

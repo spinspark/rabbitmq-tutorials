@@ -1,10 +1,10 @@
 [package]
 name = "rabbitmq-tutorials"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 futures-util = "0.3"
-lapin = "4.7"
+lapin = "4.12"
 tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread"] }
-uuid = { version = "1.23", features = ["v4"] }
+uuid = { version = "1.26", features = ["v4"] }

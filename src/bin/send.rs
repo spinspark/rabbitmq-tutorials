@@ -1,7 +1,7 @@
 use lapin::{
+    BasicProperties, Connection, ConnectionProperties,
     options::{BasicPublishOptions, QueueDeclareOptions},
     types::{AMQPValue, FieldTable},
-    BasicProperties, Connection, ConnectionProperties,
 };
 
 #[tokio::main]
